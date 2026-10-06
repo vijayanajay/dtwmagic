@@ -1,7 +1,7 @@
 # Gate 1 — Requirement Spec `0005-regime-conditioning`
 
-**Status:** `AUTHORED 2026-10-06 — awaiting Gate 1 user approval (no code, no Gate 2`
-`until signed off)`
+**Status:** `APPROVED — Gate 1 signed off 2026-10-06 (user: “Approve Gate 1 for spec`
+`0005”); Gate 2 test spec authored, awaiting freeze approval; Gate 3 not started.`
 **Date:** 2026-10-06
 **Consumes:** spec `0001-ohlcv-parquet-store` (store seam) and spec
 `0003-pattern-search-core` (composed verbatim as the unfiltered pool; its frozen
@@ -270,11 +270,12 @@ cell_τ is not None   AND   cell_τ == cell_{n-1}
 
 ## 8. Gate 1 Sign-Off
 
-- [ ] **User approves** this requirement spec (incl. §2.2 probe-pinned definitions,
+- [x] **User approves** this requirement spec (incl. §2.2 probe-pinned definitions,
       §2.3 strict-filter rule, §2.4 payload keys, and the §7 #5 deviation from the
       literal grilling answer) → agent may author Gate 2 test spec
-      `specs/tests/0005-regime-conditioning.md`.
-- [ ] **No new dependency requested** (§2.6) — nothing to approve.
+      `specs/tests/0005-regime-conditioning.md`. **(Approved 2026-10-06)**
+- [x] **No new dependency requested** (§2.6) — nothing to approve. **(Approved
+      2026-10-06)**
 
 **STOP:** No Gate 2 or Gate 3 work proceeds until the box above is checked by the
 user. The test spec is **IMMUTABLE once approved**; Gate 3 (code) still requires
