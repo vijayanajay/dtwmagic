@@ -218,3 +218,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Generated OHLCV store (spec 0001, Gate 3)
+/data/
