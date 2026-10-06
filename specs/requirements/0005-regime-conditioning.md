@@ -1,7 +1,8 @@
 # Gate 1 — Requirement Spec `0005-regime-conditioning`
 
 **Status:** `APPROVED — Gate 1 signed off 2026-10-06 (user: “Approve Gate 1 for spec`
-`0005”); Gate 2 test spec authored, awaiting freeze approval; Gate 3 not started.`
+`0005”); Gate 2 frozen 2026-10-06 + user-directed revision R1 (T-003 exclusion`
+`check, evidence in Gate 2 revision log); Gate 3 in progress.`
 **Date:** 2026-10-06
 **Consumes:** spec `0001-ohlcv-parquet-store` (store seam) and spec
 `0003-pattern-search-core` (composed verbatim as the unfiltered pool; its frozen
@@ -209,9 +210,10 @@ cell_τ is not None   AND   cell_τ == cell_{n-1}
 - **Independent reference:** literal cell classification + filter in the test
   reproduces `analogs` (dates, order) exactly, and each item's `distance`/`score`
   equals `search_analogs`'s output for the same date — proving filter-only.
-- **Soundness:** every returned `τ` shares the query cell; every excluded eligible
-  cell differs or is `None`; `analogs` is an order-preserving subsequence of the
-  full pool.
+- **Soundness:** every returned `τ` shares the query cell; every eligible window
+  **excluded by the filter** differs or is `None` (checked with `K` = the whole
+  in-regime pool so *not returned ⇔ filtered out* holds literally — Gate 2 R1);
+  `analogs` is an order-preserving subsequence of the full pool.
 - **Empty path:** a query whose cell has zero eligible members returns the regime
   block with `analogs: []`, no exception (real fixture dates exist: the 52
   zero-pool days, e.g. 2009-06-04 at L=10).

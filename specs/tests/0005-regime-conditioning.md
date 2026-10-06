@@ -1,10 +1,11 @@
 # Gate 2 — Frozen Test Spec `0005-regime-conditioning`
 
-**Status:** `PENDING USER FREEZE — authored 2026-10-06 (17 scenarios + six §0`
-`interface freezes); every numeric pin below was verified by probe through the`
-`production path (build_store → read_parquet) BEFORE authoring. This file becomes`
-`IMMUTABLE on approval and may never be edited to make failing code pass. Only a`
-`user-directed revision may change it.`
+**Status:** `FROZEN — approved by user 2026-10-06 (“Approve Gate 2 freeze for spec`
+`0005”); 17 scenarios + six §0 interface freezes; every numeric pin was`
+`probe-verified through the production path (build_store → read_parquet) before`
+`authoring; user-directed revision R1 (T-003 exclusion check at K=131, 2026-10-06,`
+`applied during Gate 3 with evidence). This file is IMMUTABLE; it may never be`
+`edited to make failing code pass. Only a user-directed revision may change it.`
 **Date:** 2026-10-06
 **Maps 1-to-1 to:** `specs/requirements/0005-regime-conditioning.md` (Gate 1,
 APPROVED 2026-10-06)
@@ -109,8 +110,10 @@ of specs 0001/0003/0004.)
   `analogs` has length exactly `min(10, 131) = 10`, every returned `date` maps to
   a store index `τ ≥ 251` with `cell_τ == "bearish-normal"`, `analogs` is an
   **order-preserving subsequence** of `search_analogs("^NSEI", 10, 4673, ...)`
-  (same relative order, no reordering), and every 0003-eligible date **not**
-  returned has a `None` or `≠ bearish-normal` cell.
+  (same relative order, no reordering), and — checked on a second call with
+  **`K = 131`** (the whole in-regime pool, so *not returned ⇔ filtered out* holds
+  literally; R1) — every 0003-eligible date **not** in that full-pool result has
+  a `None` or `≠ bearish-normal` cell.
 
 **T-004 — Composition identity with 0003 (filter-only proof)**
 - *Given* the full unfiltered pool `search_analogs("^NSEI", 10, 4673, store_dir)`
@@ -267,12 +270,22 @@ of specs 0001/0003/0004.)
 
 ## 8. Gate 2 Sign-Off
 
-- [ ] **User approves** this test spec **including the six §0 interface freezes**
-      → it becomes **IMMUTABLE**; Gate 3 (TDD: Red → Green in `tests/test_0005.py`)
-      may begin.
+- [x] **User approves** this test spec **including the six §0 interface freezes**
+      → it is **IMMUTABLE**; Gate 3 (TDD: Red → Green in `tests/test_0005.py`)
+      may begin. **(Approved 2026-10-06)**
 
 **STOP:** No code in `src/regime.py` may be written until the box above is checked
 by the user.
 
-**Revision log:** *(none — authored after all pins were probe-verified; any future
-change must be a user-directed revision recorded here, like 0003 R1/R2.)*
+**Revision log:**
+- **R1 (2026-10-06, user-directed, applied during Gate 3 after the RED/GREEN run
+  surfaced it):** T-003's exclusion bullet as originally authored read “every
+  0003-eligible date **not returned** has a `None` or `≠ qcell` cell” while the
+  same scenario pins `len(analogs) == min(10, 131)` — the 121 in-regime dates
+  beyond the K=10 cap are “not returned” yet carry the query cell, making the
+  literal assertion unsatisfiable by any honest implementation (contradiction
+  proven by the scenario's own 131-pool pin). Revision: the exclusion check now
+  runs on a `K=131` call (whole in-regime pool), restoring the intended soundness
+  meaning (**not weakened** — it additionally asserts `len == 131` and that the
+  K=10 result is its prefix). Chain pins, subsequence, and every other assertion
+  unchanged. **The test file was updated to match this user-directed revision.**
