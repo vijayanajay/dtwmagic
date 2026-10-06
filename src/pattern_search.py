@@ -62,10 +62,16 @@ def search_analogs(symbol, L, K, parquet_dir):
     cand = [(float(dist[i]), str(dates[i + L - 1]), int(i)) for i in range(s_max + 1)]
     cand.sort(key=lambda t: (t[0], t[1]))  # distance asc, exact ties -> earlier date
 
+    # ponytail: payload from hoisted column arrays (spec 0006 Fix A) — per-row
+    # iterrows was 95% of full-pool time; upgrade path is a rank-only seam with
+    # survivor-only payload build if a consumer needs the full pool routinely.
+    opens = df["open"].to_numpy("float64")
+    highs = df["high"].to_numpy("float64")
+    lows = df["low"].to_numpy("float64")
+
     out = []
     for d, date, s in cand[:K]:
         tau = s + L - 1
-        fwd = df.iloc[tau + 1 : tau + 1 + FORWARD]
         out.append(
             {
                 "date": date,
@@ -75,12 +81,12 @@ def search_analogs(symbol, L, K, parquet_dir):
                 "forward": [
                     {
                         "date": str(dates[tau + 1 + k]),
-                        "open": float(row["open"]),
-                        "high": float(row["high"]),
-                        "low": float(row["low"]),
-                        "close": float(row["close"]),
+                        "open": float(opens[tau + 1 + k]),
+                        "high": float(highs[tau + 1 + k]),
+                        "low": float(lows[tau + 1 + k]),
+                        "close": float(closes[tau + 1 + k]),
                     }
-                    for k, (_, row) in enumerate(fwd.iterrows())
+                    for k in range(FORWARD)
                 ],
             }
         )

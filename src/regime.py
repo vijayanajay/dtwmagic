@@ -58,11 +58,16 @@ def search_analogs_regime(symbol, L, K, parquet_dir):
     path = Path(parquet_dir) / f"{symbol}.parquet"
     if not path.exists():
         raise ValueError(f"store not found for symbol {symbol!r}: {path}")
-    # window, K, bars: pass-through to 0003 with the caller's own arguments
-    # (single source of truth for those rules; its top-K result is discarded).
-    search_analogs(symbol, L, K, parquet_dir)
+    # window & K mirror 0003's frozen rules/messages verbatim so the single pool
+    # call below can carry `bars` — one computation per call (spec 0006 Fix B),
+    # frozen validation order store -> window -> K -> bars -> regime preserved.
+    if isinstance(L, bool) or not isinstance(L, (int, np.integer)) or not (5 <= L <= 60):
+        raise ValueError(f"window must be an int in 5..60 (got {L!r})")
+    if isinstance(K, bool) or not isinstance(K, (int, np.integer)) or K < 1:
+        raise ValueError(f"K must be an int >= 1 (got {K!r})")
     df = pd.read_parquet(path)
     n = len(df)
+    full = search_analogs(symbol, L, n, parquet_dir)  # raises `bars`; the ONE computation
     if n - 1 < 251:
         raise ValueError(
             f"regime: query session not classifiable; store has {n} rows, "
@@ -71,7 +76,6 @@ def search_analogs_regime(symbol, L, K, parquet_dir):
     cells, p = _classify(df)
     qcell = cells[-1]
     trend, volatility = qcell.split("-", 1)
-    full = search_analogs(symbol, L, n, parquet_dir)  # full unfiltered pool
     dates = pd.to_datetime(df["date"]).dt.strftime("%Y-%m-%d").to_numpy()
     i_of = {str(d): i for i, d in enumerate(dates)}
     kept = [

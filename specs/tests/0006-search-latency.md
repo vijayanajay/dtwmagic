@@ -1,9 +1,9 @@
 # Gate 2 — Frozen Test Spec `0006-search-latency`
 
-**Status:** `PENDING USER FREEZE — authored 2026-10-06 (9 scenarios + five §0`
-`interface freezes); baselines and pins in this file come from the Gate 1 §2.2`
-`profile probe (PROF_EXIT=0). This file becomes IMMUTABLE on approval and may never`
-`be edited to make failing code pass. Only a user-directed revision may change it.`
+**Status:** `FROZEN — approved by user 2026-10-06 (“Approve Gate 2 freeze for spec`
+`0006”); 9 scenarios + five §0 interface freezes; baselines/pins come from the`
+`Gate 1 §2.2 profile probe (PROF_EXIT=0). This file is IMMUTABLE; it may never be`
+`edited to make failing code pass. Only a user-directed revision may change it.`
 **Date:** 2026-10-06
 **Maps 1-to-1 to:** `specs/requirements/0006-search-latency.md` (Gate 1, APPROVED
 2026-10-06)
@@ -162,9 +162,9 @@ of specs 0001–0005, no test spec** may change — enforced by §0 freeze 2.)
 
 ## 5. Gate 2 Sign-Off
 
-- [ ] **User approves** this test spec **including the five §0 interface freezes**
-      → it becomes **IMMUTABLE**; Gate 3 (TDD: Red → Green in `tests/test_0006.py`)
-      may begin.
+- [x] **User approves** this test spec **including the five §0 interface freezes**
+      → it is **IMMUTABLE**; Gate 3 (TDD: Red → Green in `tests/test_0006.py`)
+      may begin. **(Approved 2026-10-06)**
 
 **STOP:** No change to `src/pattern_search.py` or `src/regime.py` may be made
 until the box above is checked by the user.
