@@ -1,7 +1,7 @@
 # Gate 1 — Requirement Spec `0007-eod-snapshot`
 
-**Status:** `AUTHORED 2026-10-06 — awaiting Gate 1 user approval (no code, no Gate 2`
-`until signed off)`
+**Status:** `APPROVED — Gate 1 signed off 2026-10-06 (user: “Approve Gate 1 for spec`
+`0007”); Gate 2 test spec in authoring; Gate 3 not started.`
 **Date:** 2026-10-06
 **Consumes:** specs `0003-pattern-search-core` (distance/score/forward payload),
 `0005-regime-conditioning` (query regime + filtered analogs — its wrapper is the
@@ -222,11 +222,12 @@ build_snapshot(symbol, parquet_dir, out_dir) -> dict   # the manifest
 
 ## 8. Gate 1 Sign-Off
 
-- [ ] **User approves** this requirement spec (incl. the §2.2 schema, §2.3
+- [x] **User approves** this requirement spec (incl. the §2.2 schema, §2.3
       `summary: null` edge contract, §2.4 serialization freeze, and the §7
       decisions) → agent may author Gate 2 test spec
-      `specs/tests/0007-eod-snapshot.md`.
-- [ ] **No new dependency requested** (§2.6) — nothing to approve.
+      `specs/tests/0007-eod-snapshot.md`. **(Approved 2026-10-06)**
+- [x] **No new dependency requested** (§2.6) — nothing to approve. **(Approved
+      2026-10-06)**
 
 **STOP:** No Gate 2 or Gate 3 work proceeds until the box above is checked by the
 user. The test spec is **IMMUTABLE once approved**; Gate 3 (code) still requires
