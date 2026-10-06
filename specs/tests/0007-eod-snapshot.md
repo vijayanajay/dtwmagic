@@ -1,11 +1,9 @@
 # Gate 2 — Frozen Test Spec `0007-eod-snapshot`
 
-**Status:** `PENDING USER FREEZE — authored 2026-10-06 (10 scenarios + six §0`
-`interface freezes); every pin (file sha256, per-window anchors, slice-store`
-`null-summary at all five windows) was probe-verified through the real seams`
-`(0005 wrapper + 0004 reducer + frozen serialization) BEFORE authoring, per Gate 1`
-`§4. This file becomes IMMUTABLE on approval and may never be edited to make`
-`failing code pass. Only a user-directed revision may change it.`
+**Status:** `FROZEN — approved by user 2026-10-06 (“Approve Gate 2 freeze for spec`
+`0007”); 10 scenarios + six §0 interface freezes; all pins probe-verified`
+`(PROBE_EXIT=0) before authoring. This file is IMMUTABLE; it may never be edited`
+`to make failing code pass. Only a user-directed revision may change it.`
 **Date:** 2026-10-06
 **Maps 1-to-1 to:** `specs/requirements/0007-eod-snapshot.md` (Gate 1, APPROVED
 2026-10-06)
@@ -184,9 +182,9 @@ untouched, and this eval sha-pins all six prior test files — §0 freeze 4.)
 
 ## 6. Gate 2 Sign-Off
 
-- [ ] **User approves** this test spec **including the six §0 interface freezes**
-      → it becomes **IMMUTABLE**; Gate 3 (TDD: Red → Green in `tests/test_0007.py`)
-      may begin.
+- [x] **User approves** this test spec **including the six §0 interface freezes**
+      → it is **IMMUTABLE**; Gate 3 (TDD: Red → Green in `tests/test_0007.py`)
+      may begin. **(Approved 2026-10-06)**
 
 **STOP:** No `src/snapshot.py` may be written until the box above is checked by
 the user.
