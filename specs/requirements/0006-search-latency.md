@@ -1,7 +1,7 @@
 # Gate 1 — Requirement Spec `0006-search-latency`
 
-**Status:** `AUTHORED 2026-10-06 — awaiting Gate 1 user approval (no code, no Gate 2`
-`until signed off)`
+**Status:** `APPROVED — Gate 1 signed off 2026-10-06 (user: “Approve Gate 1 for spec`
+`0006”); Gate 2 test spec in authoring; Gate 3 not started.`
 **Date:** 2026-10-06
 **Consumes:** specs `0003-pattern-search-core` (its payload loop is the measured hot
 spot; source-level refactor only — signature, semantics, and all 19 frozen evals
@@ -166,11 +166,12 @@ order/keywords, T-007 determinism.
 
 ## 8. Gate 1 Sign-Off
 
-- [ ] **User approves** this requirement spec (incl. the §2.2 evidence-based scope
+- [x] **User approves** this requirement spec (incl. the §2.2 evidence-based scope
       pivot, Fix A touching `src/pattern_search.py`'s payload loop, and the §2.3
       perf bounds) → agent may author Gate 2 test spec
-      `specs/tests/0006-search-latency.md`.
-- [ ] **No new dependency requested** (§2.5) — nothing to approve.
+      `specs/tests/0006-search-latency.md`. **(Approved 2026-10-06)**
+- [x] **No new dependency requested** (§2.5) — nothing to approve. **(Approved
+      2026-10-06)**
 
 **STOP:** No Gate 2 or Gate 3 work proceeds until the box above is checked by the
 user. The test spec is **IMMUTABLE once approved**; Gate 3 (code) still requires
