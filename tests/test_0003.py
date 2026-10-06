@@ -92,10 +92,11 @@ def test_t001_payload_contract(store_dir):
     prev = float("-inf")
     for item in res:
         assert isinstance(item, dict)
-        assert set(item) == {"date", "distance", "score", "forward"}
+        assert set(item) == {"date", "distance", "score", "close", "forward"}  # R2
         datetime.date.fromisoformat(item["date"])
         assert isinstance(item["distance"], float)
         assert isinstance(item["score"], float)
+        assert isinstance(item["close"], float)
         fwd = item["forward"]
         assert isinstance(fwd, list) and len(fwd) == 10
         fwd_dates = []
@@ -164,6 +165,7 @@ def test_t006_forward_matches_store(store_dir):
     index_of = {d: i for i, d in enumerate(dates)}
     top = search_analogs("^NSEI", 10, 10, store_dir)[0]
     i = index_of[top["date"]]
+    assert top["close"] == float(df["close"].iloc[i])  # R2 baseline = store close at tau
     fwd = df.iloc[i + 1 : i + 11]
     assert len(fwd) == 10
     for k, row in enumerate(top["forward"]):
@@ -243,7 +245,7 @@ def test_t012_boundary_window_L5(store_dir):
     assert isinstance(res, list) and len(res) <= 10
     prev = float("-inf")
     for item in res:
-        assert set(item) == {"date", "distance", "score", "forward"}
+        assert set(item) == {"date", "distance", "score", "close", "forward"}  # R2
         assert len(item["forward"]) == 10
         assert item["distance"] >= prev
         prev = item["distance"]

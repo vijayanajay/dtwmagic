@@ -71,6 +71,7 @@ def search_analogs(symbol, L, K, parquet_dir):
                 "date": date,
                 "distance": d,
                 "score": 100.0 / (1.0 + d),
+                "close": float(closes[tau]),  # p_tau baseline (R2: spec 0004 reducers)
                 "forward": [
                     {
                         "date": str(dates[tau + 1 + k]),

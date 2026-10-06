@@ -1,7 +1,8 @@
 # Gate 1 — Requirement Spec `0003-pattern-search-core`
 
 **Status:** `APPROVED — Gate 1 signed off 2026-10-06 (user, incl. §2.3 disjointness
-tightening); Gate 2 test spec in authoring`
+tightening); payload amended by user-directed Revision R2 (close key, 2026-10-06,
+pre-0004); Gate 2 frozen, Gate 3 complete`
 **Date:** 2026-10-06
 **Consumes:** spec `0001-ohlcv-parquet-store` (store seam; evals build the fixture store
 via `build_store`). Spec `0002-eod-data-fetcher` keeps the production store fresh but is
@@ -102,6 +103,8 @@ Each `list` element, in this exact shape:
   "date": "YYYY-MM-DD",   # tau_k: LAST session of the matched window
   "distance": float,      # d, raw
   "score": float,         # 100 / (1 + d), raw
+  "close": float,         # p_tau: tau_k's own close — baseline for spec 0004's
+                           # returns/MAE/MFE (Revision R2, user-directed 2026-10-06)
   "forward": [            # exactly 10 entries, T+1 .. T+10, chronological
     {"date": "YYYY-MM-DD", "open": float, "high": float,
      "low": float, "close": float},

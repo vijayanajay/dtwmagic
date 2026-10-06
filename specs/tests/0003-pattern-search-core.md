@@ -2,8 +2,9 @@
 
 **Status:** `FROZEN — approved by user 2026-10-06 (19 scenarios + five §0 interface
 freezes), including user-directed revision R1 (applied before any Gate 3 code
-existed). This file is IMMUTABLE; it may never be edited to make failing code pass.
-Only a user-directed revision may change it.`
+existed) and revision R2 (payload close key, 2026-10-06, pre-0004). This file is
+IMMUTABLE; it may never be edited to make failing code pass. Only a user-directed
+revision may change it.`
 **Date:** 2026-10-06
 **Maps 1-to-1 to:** `specs/requirements/0003-pattern-search-core.md` (Gate 1, APPROVED
 2026-10-06, incl. §2.3 disjointness tightening)
@@ -66,8 +67,9 @@ eval deterministic. **They are surfaced for explicit approval with this spec:**
 - *Given* the session store built from the fixture,
 - *When* `search_analogs("^NSEI", 10, 10, store_dir)` is called,
 - *Then* the result is a `list` of length ≤ 10; each element is a `dict` with keys
-  **exactly** `{"date","distance","score","forward"}` (no extras); `date` is an ISO
-  `YYYY-MM-DD` string; `distance` and `score` are floats; `forward` is a list of
+  **exactly** `{"date","distance","score","close","forward"}` (no extras; `close`
+  added by Revision R2); `date` is an ISO
+  `YYYY-MM-DD` string; `distance`, `score` and `close` are floats; `forward` is a list of
   **exactly 10** dicts with keys **exactly**
   `{"date","open","high","low","close"}`, dates strictly ascending ISO, prices floats;
   and `distance` is non-decreasing across the list.
@@ -228,3 +230,8 @@ checked by the user.
   arithmetic typo corrected `4654 → 4544` → `4544` (4654 is T-012's L=5 pool; for
   L=60 the frozen formula `n − 2L − 9` gives 4544). Scenario structure and all other
   assertions unchanged.
+- **R2 (2026-10-06, user-directed, precondition for spec 0004):** each result element
+  gains the key `close` (p_tau — the analog's own last-session close, the baseline
+  spec 0004's returns/MAE/MFE are relative to). T-001's exact key set and T-006
+  (baseline equals the store's close at tau) updated to match; distances, ordering,
+  eligibility, and every other assertion unchanged. All 19 evals re-ran green.
