@@ -2,7 +2,11 @@
 
 IMMUTABLE: T-001..T-010 are transcribed from the frozen test spec (10 scenarios +
 six §0 interface freezes, approved 2026-10-07).
+Revision R1 (2026-10-07, user-directed via spec 0011 Gate 1 section 2.9): T-009's
+frontend pin flips to the post-switch state (page references ./api/v2/, no api/v1)
+and GUARD_SHAS re-pins test_0008.py to its R2 digest. No other assertion changed.
 Never edit to make failing code pass; fix src/snapshot_v2.py / src/eod_job.py instead.
+(Frontend asserts: fix data/static/index.html.)
 """
 import hashlib
 import json
@@ -38,7 +42,7 @@ GUARD_SHAS = {
     "tests/test_0005.py": "a3769489f4a9b75ab9b507a91822593579c658979f2ea33f68d60caf92a94213",
     "tests/test_0006.py": "08f764b5797ca08bd99939ea7c673da47e152a2ad9da1efb592b07a994c05c35",
     "tests/test_0007.py": "e6295aa53c5aa300ade0ba64ec32b10335a2730fab0ea80ac6c5a742ba79867c",
-    "tests/test_0008.py": "b90993e24332eccf85f2543115d77423a66ed412b28b4cc932f1170a89e6cb68",
+    "tests/test_0008.py": "bafc6d0dbe231fbfe23a1576d1a92caf78abc322e603dd020e87b745c412a7fe",  # R1 re-pin (post-R2)
     "tests/test_0009.py": "f693240cdd5d784f998b249073b37c44a9fc12ef884da5d52bd19c81efbc7ec5",
 }
 
@@ -358,8 +362,8 @@ def test_t009_hermetic_readonly_isolation(tmp_path, monkeypatch):
     assert sha256_file(store_p) == before
     # frontend isolation (freeze 6): the dashboard still consumes v1 only.
     page = (REPO_ROOT / "data" / "static" / "index.html").read_text(encoding="utf-8")
-    assert "./api/v1/" in page
-    assert "api/v2" not in page
+    assert "./api/v2/" in page
+    assert "api/v1" not in page  # R1 flip — spec 0011 switched the seam
 
 
 def test_t010_performance_sanity(tmp_path):

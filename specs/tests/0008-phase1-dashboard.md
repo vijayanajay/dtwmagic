@@ -4,14 +4,17 @@
 interface freezes; every pin probe-verified (final PROBE_EXIT=0, 2026-10-07) before
 authoring. This file is IMMUTABLE; it may never be edited to make failing code pass.
 Only a user-directed revision may change it. (R1 applied 2026-10-07: tooltip
-attribute `data-tip` → `data-metric` — see Revision log.)`
+attribute `data-tip` → `data-metric` — see Revision log.) (R2 applied
+2026-10-07: fetch literal → `./api/v2/%5ENSEI.json` per spec 0011 §2.9 — see
+Revision log.)`
 **Date:** 2026-10-07
 **Maps 1-to-1 to:** `specs/requirements/0008-phase1-dashboard.md` (Gate 1, APPROVED
 2026-10-07)
 **Test file (Gate 3):** `tests/test_0008.py` (pytest, static-contract lint — no JS
 runtime, per Gate 1 §2.6)
 **Deliverable under test:** `data/static/index.html` (the page), consumed contract
-`dtwmagic.api.v1`.
+`dtwmagic.api.v2` (R2 — §4.4 bump, spec 0011; the v2 document is a strict superset
+of the v1 keys asserted in §0 freeze 5).
 
 ---
 
@@ -82,7 +85,7 @@ runtime, per Gate 1 §2.6)
    `["date","distance","score","close","forward"]`; forward row
    `["date","open","high","low","close"]`; `bars == 4673`, `last_date == "2026-10-05"`.
 6. **Behavioral literals frozen (static, probe-backed):** fetch
-   `./api/v1/%5ENSEI.json`; `const DEFAULT_WINDOW = "10"`; `const FREE_TOP_K = 3`;
+   `./api/v2/%5ENSEI.json` (R2); `const DEFAULT_WINDOW = "10"`; `const FREE_TOP_K = 3`;
    `const STALE_DAYS = 4`; `localStorage` keys exactly `dtwmagic_tos_accepted`,
    `dtwmagic_view_mode`, `dtwmagic_window`; mode labels `Simple` / `Quant` and
    `Free view`; ToS modal id `tos-modal`; footer element `<footer`; freshness badge
@@ -181,7 +184,7 @@ runtime, per Gate 1 §2.6)
 - *Then* `const DEFAULT_WINDOW = "10"`, `const FREE_TOP_K = 3`, the three localStorage
   keys of §0 freeze 6 (exactly: no fourth `dtwmagic_` key), the labels `Simple`,
   `Quant`, and `Free view` are present, and the fetch literal
-  `./api/v1/%5ENSEI.json` appears.
+  `./api/v2/%5ENSEI.json` appears (R2).
 
 **T-009 — Isolation & self-containment (BRD §4.4)**
 - *Given* `index.html`,
@@ -238,6 +241,16 @@ by the user.
   enforcement goals (tip-ban + tooltip mechanism) are preserved; no other freeze,
   needle, pattern, or scenario changed. User chose this option over dropping the
   pattern or exempting the literal (asked 2026-10-07).
+
+- **R2 (2026-10-07, user-directed via spec 0011 Gate 1 §2.9):** §0 freeze 6 +
+  T-008 fetch literal `./api/v1/%5ENSEI.json` → `./api/v2/%5ENSEI.json`, and the
+  header's contract note `dtwmagic.api.v1` → `dtwmagic.api.v2`. Reason: spec 0010's
+  §4.4 bump and spec 0011's approved fetch switch put the page on the v2 seam;
+  this literal was the only v1-bound assertion left (the §0 freeze-5 payload pins
+  are hermetically built v1 documents and stay valid — v2 is a superset).
+  test_0008.py's post-R2 digest `bafc6d0dbe231fbfe23a1576d1a92caf78abc322e603dd020e87b745c412a7fe`
+  is re-pinned in test_0010's guard — the cascade stops there (nothing pins
+  test_0010.py). No other freeze, needle, pattern, or scenario changed.
 
 *(Authored after final PROBE_EXIT=0 (2026-10-07): payload
 structure pins, slice null-state, 19 regex positive/negative controls, 16 BRD verbatim

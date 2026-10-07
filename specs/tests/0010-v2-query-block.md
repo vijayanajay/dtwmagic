@@ -1,6 +1,6 @@
 # Gate 2 — Test Spec `0010-v2-query-block`
 
-**Status:** `FROZEN — approved by user 2026-10-07 ("Approve the Gate 2 freeze for spec 0010"); 10 scenarios + six §0 interface freezes; all pins probe-verified (PROBE_EXIT=0 / PROBE_B_EXIT=0); Gate 3 started.`
+**Status:** `FROZEN — approved by user 2026-10-07 ("Approve the Gate 2 freeze for spec 0010"); 10 scenarios + six §0 interface freezes; all pins probe-verified (PROBE_EXIT=0 / PROBE_B_EXIT=0); Gate 3 started. (Revision R1 applied 2026-10-07: T-009 frontend pin flipped to the post-switch state + test_0008 guard re-pin, user-directed via spec 0011 Gate 1 §2.9 — see Revision log.)`
 **Date:** 2026-10-07
 **Maps 1-to-1 to:** `specs/requirements/0010-v2-query-block.md` (Gate 1 approved
 2026-10-07). Eval file: `tests/test_0010.py`.
@@ -66,8 +66,9 @@ Probe cross-validated 0009's frozen v1 pin: the v1 fixture file re-hashed to
    under JSON round-trip; dates `"%Y-%m-%d"` strings; hermetic socket guard;
    performance: 0009's frozen `test_t010` bound **best-of-3 ≤ 3.0 s stays in
    force** (probe: faithful dual-build stage 1.029 s → est. full run ≈ 1.15 s);
-   isolation: `data/static/index.html` must still reference `./api/v1/` and must
-   **not** contain `api/v2` (frontend switch belongs to spec 0011, Gate 1 §7 #7).
+   isolation: `data/static/index.html` references `./api/v2/` and
+   **not** `api/v1` (R1 flip — spec 0011 Gate 1 §2.9 executed the frontend
+   switch this freeze always said "belongs to spec 0011").
 
 ---
 
@@ -144,9 +145,9 @@ Probe cross-validated 0009's frozen v1 pin: the v1 fixture file re-hashed to
 - **Given** `socket.socket` monkeypatched to raise.
 - **When** `run_eod_job` runs to success over the seeded ledger.
 - **Then** no network was attempted; the store parquet bytes are unchanged
-  after both builders; and `data/static/index.html` still references
-  `./api/v1/` with no `api/v2` occurrence (Gate 1 §7 #7 — the frontend still
-  consumes the frozen v1 seam).
+  after both builders; and `data/static/index.html` references
+  `./api/v2/` with no `api/v1` occurrence (R1 flip — spec 0011 switched the
+  frontend to the v2 seam; Gate 1 §7 #7 anticipated exactly this).
 
 ### T-010 — performance sanity (dual build within frozen budget)
 - **Given** the seeded ledger and a warm-up run.
@@ -192,6 +193,17 @@ Probe cross-validated 0009's frozen v1 pin: the v1 fixture file re-hashed to
   and immutable**; agent may start Gate 3 (RED → GREEN in `tests/test_0010.py`).
   **(Approved 2026-10-07)**
 
-**IMMUTABLE ONCE APPROVED:** a failing test means the *code* is fixed, never
-this spec. Any post-freeze revision requires an explicit user directive and is
-logged in the Gate 4 record (precedent: spec 0008 R1).
+**IMMUTABLE ONCE APPROVED:** a failing test means the *code* is fixed, never  this spec. Any post-freeze revision requires an explicit user directive and is
+  logged in the Gate 4 record (precedent: spec 0008 R1).
+
+**Revision log:**
+
+- **R1 (2026-10-07, user-directed via spec 0011 Gate 1 §2.9):** T-009's frontend
+  pin flips from "references ./api/v1/, no api/v2" to "references ./api/v2/,
+  no api/v1", and `GUARD_SHAS["tests/test_0008.py"]` re-pins to that file's
+  post-R2 digest `bafc6d0d…412a7fe` (0008's R2 changed its bytes). Reason:
+  this freeze always named spec 0011 as the switch owner (§0 freeze 6 / Gate 1
+  §7 #7); the isolation *intent* — the page consumes the JSON seam, never
+  Python — is unchanged and still enforced by T-009's `ABSENT`-style checks in
+  0008 and this eval's guard table. Cascade stops here: nothing pins
+  test_0010.py. No backend pin, error string, sha, or scenario changed.

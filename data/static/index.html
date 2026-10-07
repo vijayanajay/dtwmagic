@@ -76,12 +76,15 @@ body.free .pro-only { display:none; }
 <script>
 "use strict";
 
-/* Spec 0008 — Phase-1 dashboard. Contract: dtwmagic.api.v1 (spec 0007),
-   produced nightly by src/eod_job.py (spec 0009). Vanilla JS, no framework. */
+/* Specs 0008 + 0011 — Phase-1 dashboard with ghost overlay. Contract:
+   dtwmagic.api.v2 (specs 0007/0010), produced nightly by src/eod_job.py
+   (spec 0009). Vanilla JS, no framework. */
 
-const API = "./api/v1/%5ENSEI.json";
+const API = "./api/v2/%5ENSEI.json";
 const DEFAULT_WINDOW = "10";
 const FREE_TOP_K = 3;
+const GHOST_TOP = 3;
+const GHOST_TOP_FREE = 1;
 const STALE_DAYS = 4;
 const HEND = 10;
 
@@ -215,6 +218,58 @@ function coneSVG(w) {
     "</svg>";
 }
 
+function ghostSVG(w) {
+  const L = Number(CUR);
+  const q = DOC.query;
+  if (!q || !q.candles || q.candles.length < L) return ""; // Gate 1 2.5: no query -> no chart, never a crash
+  const live = q.candles.slice(-L);
+  const c0 = live[live.length - 1].close;
+  const list = FREE_VIEW ? w.analogs.slice(0, GHOST_TOP_FREE) : w.analogs.slice(0, GHOST_TOP);
+  const ghosts = list.map(a => {
+    const vals = [c0];
+    for (let i = 1; i <= HEND; i++) vals.push(c0 * a.forward[i-1].close / a.close);
+    return { date: a.date, vals: vals };
+  });
+  const W = 660, H = 250, ml = 54, mr = 78, mt = 14, mb = 26;
+  const cols = L + HEND;
+  const vals = [];
+  live.forEach(c => { vals.push(c.low, c.high); });
+  ghosts.forEach(gh => gh.vals.forEach(v => vals.push(v)));
+  const lo0 = Math.min.apply(null, vals), hi0 = Math.max.apply(null, vals);
+  const pad = (hi0 - lo0) * 0.08 || 1;
+  const lo = lo0 - pad, hi = hi0 + pad;
+  const x = i => ml + (i + 0.5) / cols * (W - ml - mr);
+  const y = v => mt + (hi - v) / (hi - lo) * (H - mt - mb);
+  let g = "";
+  for (let i = 0; i <= 4; i++) {
+    const v = lo + (hi - lo) * i / 4;
+    g += '<line x1="' + ml + '" x2="' + (W - mr) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="#21262d"/>' +
+      '<text x="' + (ml - 6) + '" y="' + (y(v) + 3) + '" text-anchor="end" fill="#8b949e" font-size="10">' +
+      Math.round(v).toLocaleString("en-IN") + "</text>";
+  }
+  live.forEach((c, i) => {
+    const up = c.close >= c.open;
+    const col = up ? "#26a69a" : "#f0616d";
+    const bx = x(i);
+    g += '<line x1="' + bx + '" x2="' + bx + '" y1="' + y(c.high) + '" y2="' + y(c.low) + '" stroke="' + col + '"/>';
+    const bt = y(Math.max(c.open, c.close)), bb = y(Math.min(c.open, c.close));
+    g += '<rect x="' + (bx - 3.5) + '" y="' + bt + '" width="7" height="' + Math.max(1, bb - bt) + '" fill="' + col + '"/>';
+  });
+  const colors = ["#8b949e", "#d29922", "#b083f0"];
+  ghosts.forEach((gh, gi) => {
+    const pts = gh.vals.map((v, i) => x(L - 1 + i) + "," + y(v)).join(" ");
+    g += '<polyline points="' + pts + '" fill="none" stroke="' + colors[gi % colors.length] +
+      '" stroke-width="1.6" stroke-dasharray="5 3"/>';
+    g += '<text x="' + (x(cols - 1) + 4) + '" y="' + (y(gh.vals[HEND]) + 3) +
+      '" fill="' + colors[gi % colors.length] + '" font-size="10">' + gh.date + "</text>";
+  });
+  const step = Math.ceil(L / 5);
+  const xlab = live.map((c, i) => i % step === 0 ?
+    '<text x="' + x(i) + '" y="' + (H - 7) + '" text-anchor="middle" fill="#8b949e" font-size="9">' +
+    c.date.slice(5) + "</text>" : "").join("");
+  return '<svg viewBox="0 0 ' + W + " " + H + '" width="100%" height="' + H + '">' + g + xlab + "</svg>";
+}
+
 function summaryTable(w) {
   const s = w.summary;
   const c = s.cone[String(HEND)];
@@ -285,6 +340,11 @@ function render() {
   if (!DOC.windows[CUR]) CUR = DEFAULT_WINDOW;
   const w = DOC.windows[CUR];
   let h = header(DOC) + selector(DOC);
+  h += '<div class="card"><h2>Ghost overlay — window L=' + CUR +
+    " (current candles + matched historical episodes)</h2>" + ghostSVG(w) +
+    '<div class="cap">' +
+    "Historical Ghost Paths — each line replays the actual path a matched historical episode took after its match date, re-anchored from that date's close to today's close." +
+    "</div></div>";
   if (!w.summary) {
     h += nullPanel(CUR);
   } else {

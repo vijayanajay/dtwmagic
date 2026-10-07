@@ -1,10 +1,13 @@
-"""Frozen eval for spec 0008 — Gate 2: specs/tests/0008-phase1-dashboard.md (R1).
+"""Frozen eval for spec 0008 — Gate 2: specs/tests/0008-phase1-dashboard.md (R2).
 
 IMMUTABLE: T-001..T-010 are transcribed from the frozen test spec (10 scenarios +
 seven §0 interface freezes, approved 2026-10-07; revision R1 renamed the tooltip
 attribute data-tip -> data-metric so the mandated literal cannot trip freeze 4's
 \\btip\\b scan). Never edit to make failing code pass; fix data/static/index.html
-instead.
+instead. Revision R2 (2026-10-07, user-directed via spec 0011 Gate 1
+section 2.9): the fetch literal follows the BRD 4.4 version bump to
+./api/v2/%5ENSEI.json — the ghost-overlay frontend consumes the v2 seam;
+no other assertion changed.
 """
 import hashlib
 import json
@@ -102,7 +105,7 @@ LITERALS = [
     "Simple",
     "Quant",
     "Free view",
-    "./api/v1/%5ENSEI.json",
+    "./api/v2/%5ENSEI.json",  # R2: BRD 4.4 bump, spec 0011 section 2.9
 ]
 STORAGE_KEYS = {"dtwmagic_tos_accepted", "dtwmagic_view_mode", "dtwmagic_window"}
 ABSENT = [
