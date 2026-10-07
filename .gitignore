@@ -219,5 +219,8 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# Generated OHLCV store (spec 0001, Gate 3)
-/data/
+# Generated outputs (specs 0001/0002/0007/0009): store, ledger, snapshots.
+# The authored dashboard under data/static/ IS committed (spec 0008, Gate 1 2.1).
+/data/parquet/
+/data/eod/
+/data/static/api/
