@@ -146,6 +146,13 @@ Per project mandate, **every single feature must have an explicit end-user value
     - For 2,000 stocks: $2,000 \times 1.5\text{ ms} = 3.0\text{ seconds}$ total compute on a single modern CPU!
   - We use Fast Vectorized Euclidean distance to filter to Top 50 candidates, then refine with Sakoe-Chiba DTW on just those 50 candidates in 5ms. Total run time per stock: **under 10ms**.
 
+### 4.4 Strict Frontend / Backend Isolation & Contract Boundary (Parallel Team Seam)
+To allow backend quantitative engineers and frontend UI engineers to build, iterate, and refactor completely independently and in parallel:
+1. **Contract-First Seam:** All communication between backend compute and frontend visualization is mediated strictly via frozen Static API JSON payloads (`dtwmagic.api.v1` schema in `data/static/api/v1/{symbol}.json`).
+2. **Backend Independence:** The backend quantitative engine (Python, pandas, numpy, SQLite, Parquet) produces deterministic JSON payloads matching the frozen schema. It has zero knowledge of HTML, CSS, DOM APIs, or UI presentation templates.
+3. **Frontend Independence:** The frontend dashboard (Vanilla HTML5, CSS, SVG, JavaScript) is a static client that fetches and renders the JSON payload. Frontend developers can build, style, mock, and test UI components completely offline against committed JSON fixtures without running Python or touching backend code.
+4. **Zero Cross-Leakage:** Backend tests never touch UI files; frontend tests never import or execute backend Python internals. Schema changes require an explicit API version bump (e.g. `v1` $\rightarrow$ `v2`) approved through Gate 1.
+
 ---
 
 ## 5. Mathematical & Quantitative Formulation
@@ -218,6 +225,31 @@ For the top $K$ analogs, where historical pattern ends at index $\tau_k$:
 5. **Mandatory Persistent Compliance Footer:**
    - Explicit disclaimer and technology platform declaration visible on every page.
 
+### 6.3 Dual-Audience Progressive Disclosure Architecture (Beginner + Quant)
+To bridge the gap between retail discretionary traders (beginners needing intuitive context) and systematic traders (quants needing exhaustive quantile distributions), the frontend implements a strict **Progressive Disclosure** hierarchy without watering down analytical depth:
+
+1. **Dual-Mode View Toggle (`[ Simple Mode ]` vs `[ Quant Mode ]`):**
+   - **Simple Mode (Default for beginners):** Scaffolds complex distributions into plain-English takeaways and visual intuition.
+   - **Quant Mode (For advanced traders):** Reveals the full multi-horizon quantile matrices ($p10, p25, p50, p75, p90$), exact Sakoe-Chiba DTW distances, Match Quality scores, NATR percentile ranks, and raw JSON. User preference persists in browser local storage.
+
+2. **Layer 1: The Plain-English Executive Summary Card:**
+   - Positioned directly above the charts, translating numerical matrices into structured English bullet points:
+     - *"Historical Sample Positive Frequency: In 8 out of 10 matched historical episodes (80%), price closed higher after 10 sessions."*
+     - *"Observed Median Outcome: +3.8%."*
+     - *"Historical Adverse Excursion: Even in positive follow-throughs, price historically experienced a median drawdown of -2.7% before bouncing."*
+     - *"Observed Historical Spread: 80% of historical cases finished between -0.9% (10th percentile) and +6.3% (90th percentile)."*
+     - *(Mandatory SEBI context footnote: "Descriptive historical observations only — not a forecast, target, or investment recommendation.")*
+
+3. **Layer 2: Visual Intuition & Labeled Overlays:**
+   - **Annotated Forward Cone:** Adds plain-English legend labels alongside mathematical quantiles:
+     - Median line $\rightarrow$ *"Typical Historical Path (p50)"*
+     - 25th–75th band $\rightarrow$ *"Common Historical Zone (Middle 50%)"*
+     - 10th–90th band $\rightarrow$ *"Full Historical Range (Outer 80%)"*
+   - **Visual Twin Sparklines:** Accompanies each matched date with a mini SVG sparkline overlaying today's normalized price trajectory directly against the historical analog to visually demonstrate geometrical similarity.
+
+4. **Layer 3: Plain-Language Educational Tooltips (Safe Harbor SEBI Wording):**
+   - Every quantitative indicator and column header features an interactive, accessible tooltip explaining what the metric represents in plain English while reinforcing statutory safe harbor compliance (detailed in §8.2C).
+
 ---
 
 ## 7. Delivery Roadmap & Non-Functional Requirements
@@ -231,6 +263,27 @@ For the top $K$ analogs, where historical pattern ends at index $\tau_k$:
 - **Phase 1 (Current Scope):** Core quantitative pattern retrieval engine on NIFTY 50 (`^NSEI`) + standalone interactive web dashboard.
 - **Phase 2:** Automated EOD pipeline for NIFTY 500 stocks + SQLite database + configurable technical pattern screener.
 - **Phase 3:** Full 2,000+ NSE universe, user authentication, subscription billing, and in-app/email technical threshold alerts.
+- **Phase 4 (Long-Term Strategic Goal):** Multi-timeframe intraday engine (4-Hour, 1-Hour, 15-Minute Parquet feeds) + Cross-Horizon Confluence Screener.
+
+### 7.3 Long-Term Strategic Roadmap: Multi-Timeframe & Fractal Confluence Engine
+As a long-term evolution of the platform (Elite Tier / Phase 4), the quantitative pattern engine will expand from daily time series into a **Multi-Horizon & Multi-Timeframe Fractal Confluence Engine**:
+
+1. **Bar-Agnostic Mathematical Ingestion:**
+   - The core Z-normalization and Euclidean/DTW distance algorithm operates on an abstract vector of $L$ bars. It is completely decoupled from the temporal resolution of the candle.
+   - Future data stores will ingest intraday resolutions into partitioned Parquet stores (e.g. `data/parquet/{symbol}_1h.parquet`, `data/parquet/{symbol}_4h.parquet`, `data/parquet/{symbol}_15m.parquet`).
+   - Standard intraday query equivalents:
+     - **3-day swing context on 1-hour candles:** $3 \text{ sessions} \times 6.25 \text{ hrs} \approx 18\text{--}19 \text{ bars}$.
+     - **5-day swing context on 4-hour candles:** $5 \text{ sessions} \times 2 \text{ bars} \approx 10 \text{ bars}$.
+
+2. **Cross-Horizon Confluence Scoring (Multi-Window Agreement):**
+   - **The Problem:** A single short-term window ($L=5$) might display strong positive follow-through ($80\%$), while a medium-term window ($L=30$) displays strong negative follow-through ($20\%$), indicating that a short-term bounce is occurring inside a broader bear-market breakdown.
+   - **The Solution:** A Cross-Horizon Confluence Index measuring whether historical follow-through metrics agree across Micro ($L=5$), Meso ($L=10, 15$), and Macro ($L=30, 60$) zoom levels.
+   - **Confluence Detection:** Surfaces patterns where short-term tactical setups align with longer-term structural bases across multiple horizons simultaneously.
+
+3. **Intraday Structural Insights:**
+   - **Expanded Historical Sample Size:** 10 years of 1-hour data yields $\approx 15,500$ bars (compared to $\approx 2,480$ daily bars), significantly expanding the pool of potential in-regime historical analogs and tightening mathematical distance scores.
+   - **Intraday Gap Resolution:** Dissects overnight gap-and-go vs. gap-and-fade dynamics that are compressed into single daily bars.
+   - **Noise-Optimized Timeframes:** Prioritizes 1-hour and 4-hour resolutions to avoid the high-frequency market-maker noise inherent in 1-minute and 5-minute ticks while providing faster feedback than daily closes.
 
 ---
 
@@ -258,4 +311,18 @@ Users must actively check the box before accessing the tool:
 #### C. In-App Metric Tooltips (Contextual Safe Harbor)
 - **Observed MAE Tooltip:** *"Maximum Adverse Excursion (MAE) reflects the deepest historical drawdown observed in this matched historical sample between T+0 and T+10. This is historical empirical data, NOT a recommended stop-loss."*
 - **Observed MFE Tooltip:** *"Maximum Favorable Excursion (MFE) reflects the peak historical gain reached in this matched historical sample. This is historical empirical data, NOT a target price."*
-- **Positive Frequency Tooltip:** *"Displays the historical proportion of matched episodes where price closed positive at horizon T+H. This represents past sample frequency, NOT a future win probability."*
+- **Positive Frequency Tooltip:** *"Displays the historical proportion of matched episodes where price closed positive at horizon T+H. This represents past sample frequency, NOT a future win probability or predictive indicator."*
+- **Median Return (p50) Tooltip:** *"The 50th percentile (middle) historical return of the matched sample. Half of past matched episodes finished higher, and half finished lower. NOT an expected or forecasted return."*
+- **Quantile Range (p10 / p90) Tooltip:** *"The outer statistical boundary encompassing 80% of matched historical episodes. Represents the observed historical dispersion of past moves."*
+- **Historical Regime Tooltip:** *"Trend and volatility classification at the time of the pattern. Past matches are strictly filtered to those sharing the exact same regime weather."*
+
+#### D. Prohibited vs. Required SEBI Phrasing Standards
+| Forbidden Advisory / Predictive Phrasing | Mandatory Descriptive / Safe Harbor Standard |
+| :--- | :--- |
+| "Win Rate" / "Accuracy" | **"Historical Sample Positive Frequency"** |
+| "Target Price" / "Target" | **"Historical Observed Maximum Favorable Excursion (MFE)"** |
+| "Stop-Loss" / "Stop Level" | **"Historical Observed Maximum Adverse Excursion (MAE)"** |
+| "Expected Gain" / "Forecast" | **"Historical Median Forward Return (p50)"** |
+| "Buy Setup" / "Bullish Signal" | **"Identified Historical Analogs under Current Regime"** |
+| "Prediction" / "Trade Recommendation" | **"Descriptive Historical Search Results"** |
+

@@ -54,6 +54,9 @@ Each smell reads *what it is* → *how to fix*; match it against the diff:
 - **Message Chains**: long `a.b().c().d()` navigation the caller shouldn't depend on. → hide the walk behind one method on the first object.
 - **Middle Man**: a class or function that mostly just delegates onward. → cut it, call the real target direct.
 - **Refused Bequest**: a subclass or implementer that ignores or overrides most of what it inherits. → drop the inheritance, use composition.
+- **Cross-Layer Leakage (Strict Seam)**: backend Python code touching UI/HTML/CSS templates, or frontend code coupling directly to backend internals rather than consuming the frozen Static API JSON contract (`data/static/api/vX/`). → isolate changes across the JSON seam.
+- **SEBI Phrasing Violation**: any user-facing text, tooltip, or metric name using forbidden predictive/advisory words ("win rate", "target", "stop-loss", "buy/sell signal"). → replace with mandatory safe-harbor descriptive terms per BRD §8.2D.
+
 
 ### 4. Spawn both sub-agents in parallel
 

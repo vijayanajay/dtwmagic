@@ -87,6 +87,14 @@ Every feature, capability, or change MUST pass through 4 strict gates in order:
 - **NEVER modify a Test Spec (`specs/tests/`) to make broken code pass.**
 - **NEVER add dependencies without checking if stdlib or numpy/pandas already solves it.**
 - **NEVER create complex class hierarchies when a pure function suffices.**
+- **STRICT FRONTEND / BACKEND ISOLATION (PARALLEL DEV RULE):** Keep frontend UI and backend quantitative engine strictly isolated so developers can work on them in parallel without cross-side impact:
+  - The sole communication seam is the frozen Static API JSON contract (`data/static/api/vX/`).
+  - Backend code (`src/`, `tests/`) must NEVER embed HTML, CSS, DOM logic, or UI presentation templates.
+  - Frontend code (`data/static/`, `preview.html`, client scripts) must NEVER import or invoke backend Python internals; it communicates solely as a static consumer of the JSON schema contract.
+  - All specs and implementation tasks MUST be strictly scoped to either Backend (data engine producing JSON) or Frontend (UI consuming JSON). Never combine them into a single tangled PR or task.
+- **STRICT SEBI SAFE HARBOR PHRASING:** All UI copy, tooltips, and specs must strictly enforce BRD §8.2D descriptive phrasing:
+  - Forbidden: "Win Rate", "Target Price", "Stop-Loss", "Forecast", "Signal", "Prediction".
+  - Mandatory: "Historical Sample Positive Frequency", "Historical Observed MFE/MAE", "Historical Median Forward Return (p50)".
 
 ---
 
