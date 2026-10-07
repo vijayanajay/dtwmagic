@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dtwmagic — NIFTY 50 historical pattern search</title>
+<style>
+:root { --bg:#0d1117; --panel:#161b22; --border:#30363d; --text:#e6edf3; --muted:#8b949e; --emerald:#26a69a; --crimson:#ef5350; --amber:#e3b341; }
+* { box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); margin:0; padding:24px; font:14px/1.55 -apple-system,"Segoe UI",system-ui,sans-serif; }
+.wrap { max-width:1120px; margin:0 auto; }
+.card { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:16px; margin-bottom:16px; }
+h1 { font-size:19px; margin:0 0 4px; }
+h2 { font-size:15px; margin:0 0 8px; }
+.sub { color:var(--muted); font-size:12.5px; }
+.pill { display:inline-block; background:#21262d; border:1px solid var(--border); border-radius:20px; padding:3px 11px; margin:4px 6px 0 0; font-size:12.5px; }
+.pill.hi { color:var(--emerald); border-color:var(--emerald); }
+.pill.stale { color:var(--crimson); border-color:var(--crimson); }
+table { border-collapse:collapse; width:100%; font-size:13px; }
+th,td { padding:6px 9px; border-bottom:1px solid var(--border); text-align:right; }
+th:first-child,td:first-child { text-align:left; }
+th { color:var(--muted); font-weight:600; font-size:12px; }
+td { font-variant-numeric:tabular-nums; }
+.pos { color:var(--emerald); }
+.neg { color:var(--crimson); }
+button.win { background:#21262d; color:var(--text); border:1px solid var(--border); border-radius:6px; padding:5px 12px; margin:0 6px 6px 0; cursor:pointer; font-size:13px; }
+button.win.on { border-color:var(--emerald); color:var(--emerald); }
+.bar { display:flex; align-items:center; flex-wrap:wrap; }
+.bar .lab { color:var(--muted); font-size:12.5px; margin-right:8px; }
+.toggle { margin-left:auto; }
+.bullets { margin:6px 0 0; padding-left:20px; }
+.bullets li { margin:5px 0; }
+.foot { color:var(--muted); font-size:12px; border-left:3px solid var(--crimson); padding:6px 10px; background:rgba(239,83,80,.06); margin-top:10px; }
+.banner { border-left:3px solid var(--crimson); padding:10px 12px; color:var(--crimson); background:rgba(239,83,80,.08); }
+.nullpanel { border-left:3px solid var(--amber); padding:12px; color:var(--amber); background:rgba(227,179,65,.07); font-size:13.5px; }
+.match { border:1px solid var(--border); border-radius:6px; padding:9px 12px; margin-bottom:8px; display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
+.match .date { font-weight:600; min-width:92px; }
+.match .meta { color:var(--muted); font-size:12.5px; }
+.match .ret { font-variant-numeric:tabular-nums; min-width:66px; text-align:right; margin-left:auto; }
+.cap { color:var(--muted); font-size:12px; margin:10px 0 2px; }
+details { margin-top:10px; }
+pre { background:#0d1117; border:1px solid var(--border); border-radius:6px; padding:12px; overflow:auto; font-size:12px; max-height:420px; }
+.modal-back { position:fixed; inset:0; background:rgba(0,0,0,.72); display:flex; align-items:center; justify-content:center; z-index:50; }
+.modal-back[hidden] { display:none; }
+.modal { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:22px; max-width:580px; }
+.modal label { display:block; margin:14px 0; color:var(--text); font-size:13.5px; cursor:pointer; }
+footer.page { margin-top:28px; color:var(--muted); font-size:12.5px; border-top:1px solid var(--border); padding-top:14px; }
+footer.page h2 { color:var(--text); }
+.quant-only { display:none; }
+body.quant .quant-only { display:block; }
+body.free .pro-only { display:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="app">Loading snapshot…</div>
+  <footer class="page">
+  <!-- statutory:start -->
+    <h2>Statutory Disclosure &amp; Disclaimer</h2>
+    <p>dtwmagic is an independent financial technology and data analytics platform designed strictly for educational, research, and historical pattern search purposes. We are NOT registered with SEBI as an Investment Adviser (RIA) or Research Analyst (RA). This platform does not provide investment advice, buy/sell recommendations, price targets, stop-loss levels, or financial guidance of any kind. All information displayed represents historical mathematical pattern similarities and past descriptive price data. Past historical pattern frequencies and price movements do not guarantee, indicate, or predict future market movements. All trading and investment decisions are the sole responsibility of the user. Securities trading involves substantial risk of financial loss.</p>
+  <!-- statutory:end -->
+  </footer>
+</div>
+
+<div id="tos-modal" class="modal-back" hidden>
+  <!-- statutory:start -->
+  <div class="modal">
+    <h2>Terms of Service</h2>
+    <label><input type="checkbox" id="tos-a"> I acknowledge that dtwmagic is a technical search engine for historical chart data and does not offer trading advice, stock recommendations, or price predictions.</label>
+    <label><input type="checkbox" id="tos-b"> I understand that historical pattern occurrences are purely descriptive and do not guarantee future performance.</label>
+    <p class="sub">Both acknowledgements are required to view the dashboard. Your choice is stored in this browser only.</p>
+  </div>
+  <!-- statutory:end -->
+</div>
+
+<script>
+"use strict";
+
+/* Spec 0008 — Phase-1 dashboard. Contract: dtwmagic.api.v1 (spec 0007),
+   produced nightly by src/eod_job.py (spec 0009). Vanilla JS, no framework. */
+
+const API = "./api/v1/%5ENSEI.json";
+const DEFAULT_WINDOW = "10";
+const FREE_TOP_K = 3;
+const STALE_DAYS = 4;
+const HEND = 10;
+
+// <!-- statutory:start -->
+const TOOLTIPS = {
+  pf: "Displays the historical proportion of matched episodes where price closed positive at horizon T+H. This represents past sample frequency, NOT a future win probability or predictive indicator.",
+  median: "The 50th percentile (middle) historical return of the matched sample. Half of past matched episodes finished higher, and half finished lower. NOT an expected or forecasted return.",
+  mae: "Maximum Adverse Excursion (MAE) reflects the deepest historical drawdown observed in this matched historical sample between T+0 and T+10. This is historical empirical data, NOT a recommended stop-loss.",
+  mfe: "Maximum Favorable Excursion (MFE) reflects the peak historical gain reached in this matched historical sample. This is historical empirical data, NOT a target price.",
+  range: "The outer statistical boundary encompassing 80% of matched historical episodes. Represents the observed historical dispersion of past moves.",
+  regime: "Trend and volatility classification at the time of the pattern. Past matches are strictly filtered to those sharing the exact same regime weather."
+};
+// <!-- statutory:end */
+
+let DOC = null;
+let CUR = localStorage.getItem("dtwmagic_window") || DEFAULT_WINDOW;
+let RAW = localStorage.getItem("dtwmagic_view_mode") || "simple";
+let MODE = RAW.indexOf("quant") >= 0 ? "quant" : "simple";
+let FREE_VIEW = RAW.indexOf("free") >= 0;
+
+function saveMode() {
+  localStorage.setItem("dtwmagic_view_mode", MODE + (FREE_VIEW ? ",free" : ""));
+}
+
+const pct = v => (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v * 100).toFixed(1) + "%";
+const cls = v => v >= 0 ? "pos" : "neg";
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+
+function header(j) {
+  const q = j.regime;
+  const age = Math.floor((Date.now() - new Date(j.last_date + "T00:00:00Z").getTime()) / 86400000);
+  const isStale = age > STALE_DAYS;
+  const firstKey = Object.keys(j.windows)[0];
+  let h = '<div class="card">';
+  h += '<h1>NIFTY 50 (^NSEI) — historical pattern snapshot</h1>';
+  h += '<div class="sub">' + j.schema + " · " + j.bars + " bars · last session " + j.last_date +
+       " · windows " + Object.keys(j.windows).join("/") + " · top-" + j.windows[firstKey].k + "</div>";
+  h += '<div style="margin-top:8px">';
+  h += '<span class="pill' + (isStale ? " stale" : "") + '">EOD ' + j.last_date +
+       (isStale ? " — refresh pending" : "") + "</span>";
+  h += '<span class="pill hi" data-metric="regime">HISTORICAL REGIME: ' + q.trend.toUpperCase() +
+       " / " + q.volatility.toUpperCase() + "</span>";
+  h += '<span class="pill">cell ' + q.cell + "</span>";
+  h += '<span class="pill">NATR percentile ' + (q.p252 * 100).toFixed(1) + "%</span>";
+  h += "</div></div>";
+  return h;
+}
+
+function selector(j) {
+  let h = '<div class="card"><div class="bar">';
+  h += '<span class="lab">Pattern window</span>';
+  Object.keys(j.windows).forEach(k => {
+    if (FREE_VIEW && k !== DEFAULT_WINDOW) return;
+    h += '<button class="win' + (k === CUR ? " on" : "") + '" data-win="' + k + '">L=' + k + "</button>";
+  });
+  h += '<span class="toggle">';
+  h += '<button class="win' + (MODE === "quant" ? " on" : "") + '" id="mode-btn">' +
+       (MODE === "quant" ? "Quant" : "Simple") + " view</button>";
+  h += '<button class="win' + (FREE_VIEW ? " on" : "") + '" id="free-btn">Free view</button>';
+  h += "</span></div></div>";
+  return h;
+}
+
+function summaryCard(w, key) {
+  const s = w.summary;
+  const h = HEND;
+  const c = s.cone[String(h)];
+  const freq = s.positive_frequency[String(h)];
+  let h2 = '<div class="card"><h2>Plain-English summary — window L=' + key + "</h2><ul class=\"bullets\">";
+  h2 += "<li><strong>Historical Sample Positive Frequency:</strong> in " + Math.round(freq * s.n) +
+        " of " + s.n + " matched historical episodes (" + (freq * 100).toFixed(1) +
+        "%), price closed higher after " + h + " sessions.</li>";
+  h2 += "<li><strong>Historical Median Forward Return (p50):</strong> " + pct(c.p50) +
+        " over " + h + " sessions.</li>";
+  h2 += '<li class="pro-only"><strong>Observed historical spread:</strong> ' + pct(c.p10) + " (p10) to " +
+        pct(c.p90) + " (p90) across the matched sample of " + s.n + " episodes.</li>";
+  h2 += "</ul>";
+  // <!-- statutory:start -->
+  h2 += '<p class="foot">Descriptive historical observations only — not a forecast, target, or investment recommendation.</p>';
+  // <!-- statutory:end -->
+  h2 += "</div>";
+  return h2;
+}
+
+function nullPanel(key) {
+  return '<div class="card"><h2>Window L=' + key + "</h2>" +
+    '<div class="nullpanel">Insufficient historical sample in this regime — no outcome summary is available ' +
+    "for window L=" + key + ". This is a data state, not a malfunction.</div></div>";
+}
+
+function coneSVG(w) {
+  const s = w.summary;
+  const hz = s.horizons;
+  const W = 660, H = 250, ml = 54, mr = 14, mt = 14, mb = 26;
+  const cone = h => s.cone[String(h)];
+  const paths = (FREE_VIEW ? w.analogs.slice(0, FREE_TOP_K) : w.analogs)
+    .map(a => hz.map(h => a.forward[h - 1].close / a.close - 1));
+  const vals = [];
+  hz.forEach(h => { vals.push(cone(h).p10, cone(h).p90); });
+  paths.forEach(p => p.forEach(v => vals.push(v)));
+  vals.push(0);
+  const lo0 = Math.min.apply(null, vals), hi0 = Math.max.apply(null, vals);
+  const pad = (hi0 - lo0) * 0.08 || 0.01;
+  const lo = lo0 - pad, hi = hi0 + pad;
+  const x = h => ml + (h - 1) / (hz.length - 1) * (W - ml - mr);
+  const y = v => mt + (hi - v) / (hi - lo) * (H - mt - mb);
+  const band = (a, b) => hz.map(h => x(h) + "," + y(cone(h)[a])).join(" ") + " " +
+    hz.slice().reverse().map(h => x(h) + "," + y(cone(h)[b])).join(" ");
+  const line = k => hz.map(h => x(h) + "," + y(cone(h)[k])).join(" ");
+  let g = "";
+  for (let i = 0; i <= 4; i++) {
+    const v = lo + (hi - lo) * i / 4;
+    g += '<line x1="' + ml + '" x2="' + (W - mr) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="#21262d"/>' +
+      '<text x="' + (ml - 6) + '" y="' + (y(v) + 3) + '" text-anchor="end" fill="#8b949e" font-size="10">' +
+      pct(v) + "</text>";
+  }
+  const xlab = hz.map(h => '<text x="' + x(h) + '" y="' + (H - 7) +
+    '" text-anchor="middle" fill="#8b949e" font-size="10">' + h + "</text>").join("");
+  const raw = paths.map(p => '<polyline points="' + hz.map((h, i) => x(h) + "," + y(p[i])).join(" ") +
+    '" fill="none" stroke="rgba(139,148,158,.38)" stroke-width="1"/>').join("");
+  let bands = "";
+  if (!FREE_VIEW) {
+    bands = '<polygon points="' + band("p10", "p90") + '" fill="rgba(38,166,154,.14)"/>' +
+            '<polygon points="' + band("p25", "p75") + '" fill="rgba(38,166,154,.30)"/>';
+  }
+  return '<svg viewBox="0 0 ' + W + " " + H + '" width="100%" height="' + H + '">' + g + xlab + bands + raw +
+    '<polyline points="' + line("p50") + '" fill="none" stroke="#26a69a" stroke-width="2"/>' +
+    '<line x1="' + ml + '" x2="' + (W - mr) + '" y1="' + y(0) + '" y2="' + y(0) +
+    '" stroke="#484f58" stroke-dasharray="4 3"/>' +
+    '<text x="' + (ml + 4) + '" y="' + (mt + 9) + '" fill="#8b949e" font-size="10">T+1 → T+' + HEND + "</text>" +
+    "</svg>";
+}
+
+function summaryTable(w) {
+  const s = w.summary;
+  const c = s.cone[String(HEND)];
+  let h = '<div class="card"><table><tr>';
+  h += '<th data-metric="pf">Historical Sample Positive Frequency</th>';
+  h += '<th data-metric="median">Historical Median Forward Return (p50)</th>';
+  h += '<th class="pro-only" data-metric="mae">Historical Observed MAE (80th percentile)</th>';
+  h += '<th class="pro-only" data-metric="mfe">Historical Observed MFE (median)</th>';
+  h += '<th class="pro-only" data-metric="range">Historical Observed Range (p10–p90)</th>';
+  h += "</tr><tr>";
+  h += "<td>n = " + s.n + " matched episodes</td>";
+  h += "<td>" + (s.positive_frequency[String(HEND)] * 100).toFixed(1) + "% at T+" + HEND + "</td>";
+  h += '<td class="' + cls(c.p50) + '">' + pct(c.p50) + " at T+" + HEND + "</td>";
+  h += '<td class="pro-only">' + pct(s.mae[String(HEND)].p80) + "</td>";
+  h += '<td class="pro-only">' + pct(s.mfe[String(HEND)].p50) + "</td>";
+  h += '<td class="pro-only">' + pct(c.p10) + " … " + pct(c.p90) + "</td>";
+  h += "</tr></table></div>";
+  return h;
+}
+
+function matrix(s) {
+  let h = '<div class="card quant-only"><h2>Full historical outcome matrix (T+1 … T+10)</h2><table><tr><th>metric</th>';
+  s.horizons.forEach(hh => { h += "<th>T+" + hh + "</th>"; });
+  h += "</tr>";
+  const row = (label, fn) => {
+    let r = "<tr><td>" + label + "</td>";
+    s.horizons.forEach(hh => { r += "<td>" + fn(hh) + "</td>"; });
+    return r + "</tr>";
+  };
+  h += row("Historical Sample Positive Frequency", hh =>
+    (s.positive_frequency[String(hh)] * 100).toFixed(0) + "%");
+  ["p10", "p25", "p50", "p75", "p90"].forEach(k => {
+    h += row("cone " + k, hh => pct(s.cone[String(hh)][k]));
+  });
+  h += row("Historical Observed MAE (p80)", hh => pct(s.mae[String(hh)].p80));
+  h += row("Historical Observed MFE (p50)", hh => pct(s.mfe[String(hh)].p50));
+  h += "</table></div>";
+  return h;
+}
+
+function spark(a) {
+  const vals = a.forward.map(f => f.close / a.close - 1);
+  const lo = Math.min.apply(null, vals.concat([0]));
+  const hi = Math.max.apply(null, vals.concat([0]));
+  const span = (hi - lo) || 1;
+  const pts = vals.map((v, i) =>
+    (2 + i / (vals.length - 1) * 116).toFixed(1) + "," + (24 - (v - lo) / span * 22).toFixed(1)).join(" ");
+  return '<svg width="120" height="26" aria-hidden="true"><polyline points="' + pts +
+    '" fill="none" stroke="#26a69a" stroke-width="1.2"/></svg>';
+}
+
+function matches(w) {
+  const list = FREE_VIEW ? w.analogs.slice(0, FREE_TOP_K) : w.analogs;
+  let h = "";
+  list.forEach(a => {
+    const r = a.forward[HEND - 1].close / a.close - 1;
+    h += '<div class="match"><span class="date">' + a.date + "</span>";
+    h += '<span class="meta">similarity ' + a.score.toFixed(1) + "%</span>";
+    h += '<span class="meta quant-only">distance ' + a.distance.toFixed(4) + "</span>";
+    h += spark(a);
+    h += '<span class="ret ' + cls(r) + '">' + pct(r) + " at T+" + HEND + "</span></div>";
+  });
+  return h;
+}
+
+function render() {
+  if (FREE_VIEW) CUR = DEFAULT_WINDOW;
+  if (!DOC.windows[CUR]) CUR = DEFAULT_WINDOW;
+  const w = DOC.windows[CUR];
+  let h = header(DOC) + selector(DOC);
+  if (!w.summary) {
+    h += nullPanel(CUR);
+  } else {
+    h += summaryCard(w, CUR);
+    h += '<div class="card"><h2>Forward outcome cone — window L=' + CUR + "</h2>" + coneSVG(w) +
+      '<div class="cap">' + (FREE_VIEW
+        ? "Typical Historical Path (p50)"
+        : "Typical Historical Path (p50) · Common Historical Zone (Middle 50%) · Full Historical Range (Outer 80%)") +
+      " — descriptive past over " + w.summary.n + " matched episodes, T+1 … T+" + HEND + "</div></div>";
+    h += summaryTable(w);
+    h += matrix(w.summary);
+    h += '<div class="card"><h2>Historical matches (descriptive past)</h2>' + matches(w);
+    h += '<details class="quant-only"><summary>raw JSON</summary><pre>' +
+      esc(JSON.stringify(DOC, null, 2)) + "</pre></details></div>";
+  }
+  document.getElementById("app").innerHTML = h;
+  bind();
+}
+
+function bind() {
+  document.querySelectorAll("[data-win]").forEach(b =>
+    b.addEventListener("click", () => {
+      CUR = b.getAttribute("data-win");
+      localStorage.setItem("dtwmagic_window", CUR);
+      render();
+    }));
+  const mb = document.getElementById("mode-btn");
+  if (mb) mb.addEventListener("click", () => {
+    MODE = MODE === "quant" ? "simple" : "quant";
+    saveMode(); render();
+  });
+  const fb = document.getElementById("free-btn");
+  if (fb) fb.addEventListener("click", () => {
+    FREE_VIEW = !FREE_VIEW;
+    saveMode(); render();
+  });
+  document.querySelectorAll("[data-metric]").forEach(el => {
+    el.title = TOOLTIPS[el.dataset.metric] || "";
+  });
+  document.body.classList.toggle("quant", MODE === "quant");
+  document.body.classList.toggle("free", FREE_VIEW);
+}
+
+function initTos() {
+  const modal = document.getElementById("tos-modal");
+  if (localStorage.getItem("dtwmagic_tos_accepted") === "1") {
+    modal.hidden = true;
+    return;
+  }
+  modal.hidden = false;
+  const boxes = modal.querySelectorAll("input");
+  const check = () => {
+    if (boxes[0].checked && boxes[1].checked) {
+      localStorage.setItem("dtwmagic_tos_accepted", "1");
+      modal.hidden = true;
+    }
+  };
+  boxes.forEach(b => b.addEventListener("change", check));
+}
+
+fetch(API)
+  .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+  .then(j => { DOC = j; render(); })
+  .catch(e => {
+    document.getElementById("app").innerHTML =
+      '<div class="banner">Failed to load snapshot: ' + esc(String(e)) +
+      " — serve this directory over http and check that the nightly job has run.</div>";
+  });
+
+initTos();
+</script>
+</body>
+</html>
