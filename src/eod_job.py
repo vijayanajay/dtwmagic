@@ -1,7 +1,9 @@
 """Nightly EOD job: fetch -> store -> static snapshot (spec 0009, BRD 4.2 heartbeat).
 
 Composes the frozen seams: 0002's refresh_store (master ledger + full Parquet
-rewrite) then 0007's build_snapshot (byte-deterministic dtwmagic.api.v1 JSON).
+rewrite), 0007's build_snapshot (byte-deterministic dtwmagic.api.v1 JSON), and
+0010's build_snapshot_v2 (dtwmagic.api.v2 + query block, written to the sibling
+v2/ dir — report contract stays frozen at 6 keys with the v1 manifest).
 Each stage reports honestly so a cron wrapper can watch the exit code and the
 report's last_date; a failing run never touches the previous good snapshot.
 
@@ -22,9 +24,11 @@ import argparse
 import json
 import sys
 from datetime import date
+from pathlib import Path
 
 from src.eod_fetch import _real_get, refresh_store
 from src.snapshot import build_snapshot
+from src.snapshot_v2 import build_snapshot_v2
 
 
 def run_eod_job(symbol, start_date, end_date, parquet_dir, snapshot_dir, get=_real_get):
@@ -45,7 +49,11 @@ def run_eod_job(symbol, start_date, end_date, parquet_dir, snapshot_dir, get=_re
         report["error"] = f"refresh: {exc}"
         return report
     try:
-        report["snapshot"] = build_snapshot(symbol, parquet_dir, snapshot_dir)
+        # Gate 1 2.6: both files must build before the manifest is reported;
+        # v2 lands beside v1 at {parent}/v2 (BRD 4.4 versioned path).
+        man = build_snapshot(symbol, parquet_dir, snapshot_dir)
+        build_snapshot_v2(symbol, parquet_dir, Path(snapshot_dir).parent / "v2")
+        report["snapshot"] = man
     except Exception as exc:
         report["error"] = f"snapshot: {exc}"
         return report
